@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+
+  inventario:
+    build: ./inventario
+    ports:
+      - "50051:50051"
+
+  pedidos:
+    build: ./pedidos
+    ports:
+      - "8000:8000"
+    depends_on:
+      - inventario
+      - rabbitmq
+
+  notificaciones:
+    build: ./notificaciones
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"

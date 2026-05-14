@@ -1,17 +1,11 @@
-syntax = "proto3";
+FROM python:3.11-slim
 
-package inventario;
+WORKDIR /app
 
-service InventarioService {
-  rpc ReservarStock (StockRequest) returns (StockResponse);
-}
+COPY . .
 
-message StockRequest {
-  int32 producto_id = 1;
-  int32 cantidad = 2;
-}
+RUN pip install -r requirements.txt
 
-message StockResponse {
-  bool success = 1;
-  string mensaje = 2;
-}
+EXPOSE 50051
+
+CMD ["python", "server.py"]

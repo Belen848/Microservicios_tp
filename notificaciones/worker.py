@@ -1,9 +1,20 @@
 import pika
+import time
 
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost')
-)
+while True:
+
+    try:
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='rabbitmq')
+        )
+
+        break
+
+    except Exception:
+        print("Esperando RabbitMQ...")
+        time.sleep(5)
+
 
 channel = connection.channel()
 
@@ -14,8 +25,8 @@ def callback(ch, method, properties, body):
 
     mensaje = body.decode()
 
-    print(f"Email enviado -> {mensaje}")
-
+    
+    print(f"Email enviado -> {mensaje}", flush=True)
 
 channel.basic_consume(
     queue='order_confirmed',

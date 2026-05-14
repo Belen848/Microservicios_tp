@@ -25,7 +25,7 @@ def health():
 def crear_pedido(pedido: PedidoRequest):
 
     # gRPC → Inventario
-    channel = grpc.insecure_channel('localhost:50051')
+    channel = grpc.insecure_channel('inventario:50051')
 
     stub = inventario_pb2_grpc.InventarioServiceStub(channel)
 
@@ -44,7 +44,7 @@ def crear_pedido(pedido: PedidoRequest):
 
     # RabbitMQ → Evento async
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost')
+        pika.ConnectionParameters(host='rabbitmq')
     )
 
     rabbit_channel = connection.channel()

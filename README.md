@@ -1,11 +1,12 @@
 # MPI Microservicios - Sistemas Distribuidos
 
-Como objetivo se  propone migrar un monolito hacia una arquitectura de microservicios utilizando:
+El objetivo del proyecto es transformar una arquitectura monolítica en una arquitectura basada en microservicios utilizando:
 
 - FastAPI
 - gRPC
 - RabbitMQ
 - Docker
+- Docker Compose
 
 ---
 
@@ -44,11 +45,29 @@ Como objetivo se  propone migrar un monolito hacia una arquitectura de microserv
 # Estructura del proyecto
 
 ```bash
-mpi-microservicios/
+Tp-microservicios/
+
 ├── inventario/
+│ ├── inventario.proto
+│ ├── inventario_pb2.py
+│ ├── inventario_pb2_grpc.py
+│ ├── server.py
+│ ├── requirements.txt
+│ └── Dockerfile
+
 ├── pedidos/
+│ ├── main.py
+│ ├── inventario_pb2.py
+│ ├── inventario_pb2_grpc.py
+│ ├── requirements.txt
+│ └── Dockerfile
+
 ├── notificaciones/
-└── README.md
+│ ├── worker.py
+│ ├── requirements.txt
+│ └── Dockerfile
+
+└── docker-compose.yml
 ```
 
 ---
@@ -70,54 +89,22 @@ git clone URL_DEL_REPO
 
 ---
 
-## 2. Crear entorno virtual
+## 2. Levantar el sistema
 
 ```bash
-python -m venv venv
-```
-
-Activar entorno:
-
-### Windows
-
-```bash
-venv\Scripts\activate
+docker compose up --build
 ```
 
 ---
 
-## 3. Instalar dependencias
+## 3. Servicios disponibles
 
-### Inventario
+### FastAPI Swagger
 
-```bash
-cd inventario
-pip install -r requirements.txt
-```
+Swagger:
+http://localhost:8000/docs
 
-### Pedidos
-
-```bash
-cd ../pedidos
-pip install -r requirements.txt
-```
-
-### Notificaciones
-
-```bash
-cd ../notificaciones
-pip install -r requirements.txt
-```
-
----
-
-# Levantar RabbitMQ
-
-```bash
-docker run -d --hostname rabbitmq --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-```
-
-Panel web:
+### RabbitMQ Management
 
 http://localhost:15672
 
@@ -127,43 +114,6 @@ guest
 Password:
 guest
 
----
-
-# Ejecución
-
-## 1. Levantar Inventario
-
-```bash
-cd inventario
-python server.py
-```
-
-Servidor gRPC:
-localhost:50051
-
----
-
-## 2. Levantar Notificaciones
-
-```bash
-cd notificaciones
-python worker.py
-```
-
----
-
-## 3. Levantar Pedidos
-
-```bash
-cd pedidos
-uvicorn main:app --reload
-```
-
-Swagger:
-http://localhost:8000/docs
-
----
-
 # Flujo del sistema
 
 1. Usuario crea pedido vía REST
@@ -171,6 +121,7 @@ http://localhost:8000/docs
 3. Inventario reserva stock
 4. Pedidos publica evento en RabbitMQ
 5. Notificaciones consume evento y envía email
+6. Se simula el envío de email de confirmación.
 
 ---
 
