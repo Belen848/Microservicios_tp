@@ -8,12 +8,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-
     steps:
 
       - name: Checkout
@@ -24,10 +18,23 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Start Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Wait services
+        run: |
+          sleep 15
+
       - name: Install dependencies
         run: |
-          pip install -r pedidos/requirements.txt
+          pip install pytest requests
 
       - name: Run tests
         run: |
           pytest -v
+
+      - name: Stop Docker Compose
+        if: always()
+        run: |
+          docker compose down
