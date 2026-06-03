@@ -1,0 +1,33 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r pedidos/requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest -v

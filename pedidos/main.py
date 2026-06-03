@@ -29,12 +29,22 @@ def crear_pedido(pedido: PedidoRequest):
 
     stub = inventario_pb2_grpc.InventarioServiceStub(channel)
 
-    response = stub.ReservarStock(
-        inventario_pb2.StockRequest(
-            producto_id=pedido.producto_id,
-            cantidad=pedido.cantidad
+    try:
+
+        response = stub.ReservarStock(
+            inventario_pb2.StockRequest(
+                producto_id=pedido.producto_id,
+                cantidad=pedido.cantidad
+            ),
+            timeout=2
         )
-    )
+
+    except grpc.RpcError:
+
+        return {
+            "status": "error",
+            "mensaje": "Inventario no disponible"
+        }
 
     if not response.success:
         return {
