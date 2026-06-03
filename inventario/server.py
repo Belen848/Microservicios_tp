@@ -1,4 +1,12 @@
 from concurrent import futures
+from prometheus_client import (
+    Counter,
+    Gauge,
+    Histogram,
+    start_http_server
+)
+
+import time
 import grpc
 import redis
 
@@ -21,10 +29,42 @@ r = redis.Redis(
     socket_timeout=1
 )
 
+# MÉTRICAS PROMETHEUS
+reserve_attempts_total = Counter(
+    "reserve_attempts_total",
+    "Cantidad total de reservas"
+)
+
+overselling_attempts_total = Counter(
+    "overselling_attempts_total",
+    "Intentos de vender sin stock"
+)
+
+inventory_stock_level = Gauge(
+    "inventory_stock_level",
+    "Stock actual por producto",
+    ["producto_id"]
+)
+
+reserve_duration_seconds = Histogram(
+    "reserve_duration_seconds",
+    "Tiempo de procesamiento de reservas"
+)
+
+# Inicializar stock en Prometheus
+for producto, stock in stock_db.items():
+    inventory_stock_level.labels(
+        producto_id=str(producto)
+    ).set(stock)
+
 
 class InventarioService(inventario_pb2_grpc.InventarioServiceServicer):
 
     def ReservarStock(self, request, context):
+
+        reserve_attempts_total.inc()
+
+        inicio = time.time()
 
         producto_id = request.producto_id
         cantidad = request.cantidad
@@ -64,16 +104,31 @@ class InventarioService(inventario_pb2_grpc.InventarioServiceServicer):
                 )
 
             if stock_db[producto_id] < cantidad:
+
+                overselling_attempts_total.inc()
+
                 return inventario_pb2.StockResponse(
                     success=False,
                     mensaje="Stock insuficiente"
                 )
 
-            # Reservar stock
+            # Descontar stock
             stock_db[producto_id] -= cantidad
+
+            # Actualizar métrica de stock
+            inventory_stock_level.labels(
+                producto_id=str(producto_id)
+            ).set(
+                stock_db[producto_id]
+            )
 
             print(
                 f"Stock restante: {stock_db[producto_id]}"
+            )
+
+            # Registrar duración
+            reserve_duration_seconds.observe(
+                time.time() - inicio
             )
 
             return inventario_pb2.StockResponse(
@@ -91,6 +146,13 @@ class InventarioService(inventario_pb2_grpc.InventarioServiceServicer):
 
 
 def serve():
+
+    # Endpoint Prometheus
+    start_http_server(8001)
+
+    print(
+        "Prometheus Metrics corriendo en puerto 8001"
+    )
 
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10)
